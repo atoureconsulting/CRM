@@ -146,24 +146,50 @@ export function importContacts(dataArray) {
 }
 
 export function seedIfEmpty(seedData) {
-  if (getAllContacts().length > 0) return 0;
+  const existing = getAllContacts();
   const now = new Date().toISOString();
-  const seeded = seedData.map((c, i) => ({
-    id: i + 1,
-    name: buildName(c.firstName, c.lastName, c.name),
-    firstName: c.firstName || '', lastName: c.lastName || '',
-    company: c.company || '', sector: c.nature || c.sector || '',
-    phone: c.phone || '', email: c.email || '', profile: c.profile || 'organization',
-    city: c.city || '', message: c.message || '',
-    companyScore: c.companyScore || 0, personScore: c.personScore || 0, combinedScore: c.combinedScore || 0,
-    priority: c.priority || 'Medium', status: c.status || 'New',
-    notes: c.notes || '', followUpDate: c.followUpDate || null,
-    tags: Array.isArray(c.tags) ? c.tags : [],
-    createdAt: c.date || now, updatedAt: now,
-  }));
-  saveAllContacts(seeded);
-  write(KEYS.NEXT_ID, seeded.length + 10);
-  return seeded.length;
+
+  if (existing.length === 0) {
+    // First visit: seed everything
+    const seeded = seedData.map((c, i) => ({
+      id: c.id || (i + 1),
+      name: buildName(c.firstName, c.lastName, c.name),
+      firstName: c.firstName || '', lastName: c.lastName || '',
+      company: c.company || '', sector: c.nature || c.sector || '',
+      phone: c.phone || '', email: c.email || '', profile: c.profile || 'organization',
+      city: c.city || '', message: c.message || '',
+      companyScore: c.companyScore || 0, personScore: c.personScore || 0, combinedScore: c.combinedScore || 0,
+      priority: c.priority || 'Medium', status: c.status || 'New',
+      notes: c.notes || '', followUpDate: c.followUpDate || null,
+      tags: Array.isArray(c.tags) ? c.tags : [],
+      createdAt: c.date || now, updatedAt: now,
+    }));
+    saveAllContacts(seeded);
+    write(KEYS.NEXT_ID, Math.max(...seeded.map(c => c.id)) + 10);
+    return seeded.length;
+  }
+
+  // Returning visitor: add any seed contacts that aren't already stored (match by id)
+  const existingIds = new Set(existing.map(c => c.id));
+  const toAdd = seedData.filter(c => c.id && !existingIds.has(c.id));
+  if (toAdd.length > 0) {
+    const added = toAdd.map(c => ({
+      id: c.id,
+      name: buildName(c.firstName, c.lastName, c.name),
+      firstName: c.firstName || '', lastName: c.lastName || '',
+      company: c.company || '', sector: c.nature || c.sector || '',
+      phone: c.phone || '', email: c.email || '', profile: c.profile || 'organization',
+      city: c.city || '', message: c.message || '',
+      companyScore: c.companyScore || 0, personScore: c.personScore || 0, combinedScore: c.combinedScore || 0,
+      priority: c.priority || 'Medium', status: c.status || 'New',
+      notes: c.notes || '', followUpDate: c.followUpDate || null,
+      tags: Array.isArray(c.tags) ? c.tags : [],
+      createdAt: c.date || now, updatedAt: now,
+    }));
+    saveAllContacts([...existing, ...added]);
+    return added.length;
+  }
+  return 0;
 }
 
 function buildName(first, last, fallback) {
