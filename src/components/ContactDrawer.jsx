@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import OutreachModal from './OutreachModal.jsx';
 
 function getInitials(name) {
   if (!name) return '?';
@@ -49,21 +50,20 @@ export default function ContactDrawer({ contact, activity, onClose, onUpdate, on
   const [savingFollowUp, setSavingFollowUp] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [loggingNote, setLoggingNote] = useState(false);
+  const [showOutreach, setShowOutreach] = useState(false);
   const drawerRef = useRef(null);
 
-  // Sync followUpDate if contact changes
   useEffect(() => {
     setFollowUpDate(contact.followUpDate || '');
   }, [contact.id, contact.followUpDate]);
 
-  // Escape key closes
   useEffect(() => {
     function handler(e) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && !showOutreach) onClose();
     }
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onClose]);
+  }, [onClose, showOutreach]);
 
   async function handleSaveFollowUp() {
     setSavingFollowUp(true);
@@ -275,12 +275,19 @@ export default function ContactDrawer({ contact, activity, onClose, onUpdate, on
         </div>
 
         <div className="drawer-footer">
+          <button className="drawer-outreach-btn" onClick={() => setShowOutreach(true)}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            Outreach
+          </button>
           <button className="drawer-edit-btn" onClick={() => onEdit(contact)}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
               <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
-            Edit Contact
+            Edit
           </button>
           <button className="drawer-delete-btn" onClick={() => { onDelete(contact.id); }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -617,18 +624,35 @@ export default function ContactDrawer({ contact, activity, onClose, onUpdate, on
           }
           .drawer-footer {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             padding: 14px 20px;
             border-top: 1px solid rgba(200,169,81,0.1);
             flex-shrink: 0;
           }
-          .drawer-edit-btn {
+          .drawer-outreach-btn {
             display: flex;
             align-items: center;
             gap: 6px;
             flex: 1;
             justify-content: center;
             padding: 8px;
+            background: var(--gold);
+            color: var(--ink);
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+          }
+          .drawer-outreach-btn:hover { background: var(--gold2); }
+          .drawer-edit-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            justify-content: center;
             background: rgba(200,169,81,0.12);
             color: var(--gold);
             border: 1px solid rgba(200,169,81,0.2);
@@ -643,7 +667,7 @@ export default function ContactDrawer({ contact, activity, onClose, onUpdate, on
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 14px;
+            padding: 8px 12px;
             background: rgba(176,58,46,0.1);
             color: var(--red);
             border: 1px solid rgba(176,58,46,0.2);
@@ -656,6 +680,14 @@ export default function ContactDrawer({ contact, activity, onClose, onUpdate, on
           .drawer-delete-btn:hover { background: rgba(176,58,46,0.2); }
         `}</style>
       </div>
+
+      {showOutreach && (
+        <OutreachModal
+          contact={contact}
+          onClose={() => setShowOutreach(false)}
+          showToast={showToast}
+        />
+      )}
     </>
   );
 }
