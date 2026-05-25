@@ -3,6 +3,52 @@ import React, { useState, useEffect } from 'react';
 const BRIEFS_KEY = 'atoure_briefs';
 const API_KEY_KEY = 'atoure_claude_key';
 
+const COPY_RULES = `
+COPY RULES — APPLY TO EVERY DRAFT, NO EXCEPTIONS:
+
+1. NEVER use em dashes (—). Use periods, commas, colons, or line breaks instead.
+
+2. NEVER use these AI phrases:
+   - "I'd be happy to" / "It's important to note" / "It's worth noting"
+   - "leverage" (use "use") / "utilize" (use "use")
+   - "game-changer" / "cutting-edge" / "revolutionary" / "groundbreaking"
+   - "seamless" / "robust" / "streamline" / "elevate" / "empower"
+   - "dive deep" / "unlock the power of" / "transform your"
+   - "take your X to the next level" / "look no further"
+   - "at the end of the day" / "let's be real" / "here's the thing"
+   - "the reality is" / "moving forward" / "rest assured" / "don't miss out"
+   - "without further ado" / "that being said" / "in conclusion"
+
+3. NEVER write 3 short punchy sentences followed by a medium one. That cadence is an AI giveaway.
+
+4. NEVER fabricate case studies, client results, quotes, or testimonials. Only reference the real Atoure projects listed below.
+
+5. Be specific. "We placed a creator with DAZN for the Qatar campaign" beats "we have broadcast experience".
+
+6. One idea per sentence. Two ideas? Split it.
+
+7. Lead with what the contact gets, not what Atoure does.
+
+8. Do not stack rhetorical questions. One is fine. Three in a row is an AI tell.
+`;
+
+const ATOURE_CONTEXT = `
+ABOUT ATOURE CONSULTING:
+Sports and entertainment consultancy based in Ivory Coast. We connect African talent and brands with global opportunities. Sender: Baba.
+
+Real projects we can reference:
+- IShowSpeed x AFCON (creator activation at Africa Cup of Nations)
+- DAZN x Qatar campaign (broadcast/creator placement)
+- Ivory Coast national team campaigns
+- Ashton Hall partnership
+- Chicken Shop Date collaboration
+- Rotimi campaign
+- Maina x TotalEnergies
+- Maina pitch deck
+
+Do NOT invent other projects or results.
+`;
+
 function loadBriefs() {
   try { return JSON.parse(localStorage.getItem(BRIEFS_KEY) || '[]'); } catch { return []; }
 }
@@ -67,24 +113,12 @@ export default function OutreachModal({ contact, onClose, showToast }) {
 
     const isEmail = channel === 'email';
 
-    const prompt = `You are a professional outreach assistant for Atoure Consulting, a sports and entertainment consultancy specialising in connecting African talent with global brands and opportunities.
+    const systemPrompt = `You are an outreach copywriter for Atoure Consulting writing on behalf of Baba.\n\n${ATOURE_CONTEXT}\n\n${COPY_RULES}`;
 
-Contact profile:
-${contactInfo}
-
-Channel: ${isEmail ? 'Email' : 'WhatsApp message'}
-
-My brief for this outreach:
-${brief.trim()}
-
-${isEmail
-  ? `Write a professional outreach email. Return ONLY:
-SUBJECT: [subject line]
----
-[email body]
-
-Keep it concise, personal, and relevant to the contact. Sign off as Baba from Atoure Consulting.`
-  : `Write a short professional WhatsApp message (under 150 words). Be warm but professional. No subject line. Sign off as Baba from Atoure Consulting. Return ONLY the message text.`
+    const userPrompt = `Write a ${isEmail ? 'professional outreach email' : 'WhatsApp message (under 150 words)'} for this contact.\n\nContact profile:\n${contactInfo}\n\nMy brief:\n${brief.trim()}\n\n${
+  isEmail
+    ? `Return ONLY:\nSUBJECT: [subject line]\n---\n[email body]\n\nSign off as Baba, Atoure Consulting.`
+    : `No subject line needed. Return ONLY the message text. Sign off as Baba, Atoure Consulting.`
 }`;
 
     try {
@@ -99,7 +133,8 @@ Keep it concise, personal, and relevant to the contact. Sign off as Baba from At
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
           max_tokens: 1024,
-          messages: [{ role: 'user', content: prompt }],
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }],
         }),
       });
 
@@ -155,8 +190,7 @@ Keep it concise, personal, and relevant to the contact. Sign off as Baba from At
 
   function handleOpenEmail() {
     const to = contact.email || '';
-    const url = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(draft)}`;
-    window.open(url);
+    window.open(`mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(draft)}`);
   }
 
   function handleOpenWhatsApp() {
@@ -236,7 +270,7 @@ Keep it concise, personal, and relevant to the contact. Sign off as Baba from At
             <textarea
               className="om-textarea"
               rows={4}
-              placeholder={`e.g. Reach out about our creator network, mention the IShowSpeed AFCON campaign, keep it under 150 words, professional but warm tone…`}
+              placeholder={`e.g. Reach out about our creator network, reference the IShowSpeed AFCON campaign, keep it under 150 words, warm but professional…`}
               value={brief}
               onChange={e => setBrief(e.target.value)}
             />
@@ -418,7 +452,7 @@ Keep it concise, personal, and relevant to the contact. Sign off as Baba from At
         }
         .om-subject-input:focus { outline: none; border-color: var(--gold); }
         .om-brief-footer { display: flex; align-items: center; }
-        .om-save-link { font-size: 11px; text-underline-offset: 2px; }
+        .om-save-link { font-size: 11px; }
         .om-save-link:hover { color: var(--gold) !important; }
         .om-generate-btn {
           display: flex; align-items: center; justify-content: center; gap: 8px;
