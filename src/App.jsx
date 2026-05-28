@@ -27,7 +27,7 @@ function applyFilters(all, { search, filters, sort, page, pageSize }) {
   let r = all;
   if (search) {
     const s = search.toLowerCase();
-    r = r.filter(c => [c.name, c.company, c.phone, c.city, c.message, c.notes].some(v => v && v.toLowerCase().includes(s)));
+    r = r.filter(c => [c.name, c.company, c.email, c.phone, c.city, c.message, c.notes].some(v => v && v.toLowerCase().includes(s)));
   }
   if (filters.sector) r = r.filter(c => c.sector === filters.sector);
   if (filters.status) r = r.filter(c => c.status === filters.status);
