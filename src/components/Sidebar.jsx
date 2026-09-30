@@ -11,15 +11,20 @@ const SECTOR_LABELS = {
   'Autre': 'Autre',
 };
 
-export default function Sidebar({ stats, filters, onFilterChange, onClearFilters }) {
-  const hasFilters = filters.sector || filters.status || filters.priority;
+const LIST_TYPE_ORDER = ['Client', 'Influencer', 'Partner', 'Vendor', 'Unassigned'];
 
-  const { byStatus = {}, byPriority = {}, bySector = {}, total = 0 } = stats;
+export default function Sidebar({ stats, filters, onFilterChange, onClearFilters }) {
+  const hasFilters = filters.sector || filters.status || filters.priority || filters.listType;
+
+  const { byStatus = {}, byPriority = {}, bySector = {}, byListType = {}, total = 0 } = stats;
 
   const statusOrder = ['New', 'Contacted', 'Partner', 'Archived'];
   const priorityOrder = ['High', 'Medium'];
 
   const sectorEntries = Object.entries(bySector).sort((a, b) => b[1] - a[1]);
+  const listTypeEntries = LIST_TYPE_ORDER
+    .filter(lt => byListType[lt])
+    .map(lt => [lt, byListType[lt]]);
 
   return (
     <aside className="sidebar">
@@ -39,6 +44,22 @@ export default function Sidebar({ stats, filters, onFilterChange, onClearFilters
             >
               <span className="sidebar-item-label">{s}</span>
               <span className="sidebar-item-count">{byStatus[s] || 0}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="sidebar-section">
+        <div className="sidebar-section-title">BY LIST TYPE</div>
+        <div className="sidebar-items">
+          {listTypeEntries.map(([lt, count]) => (
+            <button
+              key={lt}
+              className={`sidebar-item ${filters.listType === lt ? 'active' : ''}`}
+              onClick={() => onFilterChange('listType', lt)}
+            >
+              <span className="sidebar-item-label">{lt}</span>
+              <span className="sidebar-item-count">{count}</span>
             </button>
           ))}
         </div>

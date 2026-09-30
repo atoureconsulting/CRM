@@ -11,6 +11,7 @@ const SORT_OPTIONS = [
 
 const COLUMN_LABELS = {
   name: 'Name & Company',
+  listType: 'List Type',
   sector: 'Sector',
   phone: 'Phone',
   score: 'Score',

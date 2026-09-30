@@ -13,7 +13,7 @@ import {
   bulkUpdateStatus, getContactActivity, addActivityEntry, getStats, importContacts,
 } from './db.js';
 
-const ALL_COLUMNS = ['name', 'sector', 'phone', 'score', 'priority', 'status', 'followUpDate', 'actions'];
+const ALL_COLUMNS = ['name', 'listType', 'sector', 'phone', 'score', 'priority', 'status', 'followUpDate', 'actions'];
 
 function loadVisibleColumns() {
   try {
@@ -32,6 +32,7 @@ function applyFilters(all, { search, filters, sort, page, pageSize }) {
   if (filters.sector) r = r.filter(c => c.sector === filters.sector);
   if (filters.status) r = r.filter(c => c.status === filters.status);
   if (filters.priority) r = r.filter(c => c.priority === filters.priority);
+  if (filters.listType) r = r.filter(c => (c.listType || 'Unassigned') === filters.listType);
   const { field, dir } = sort;
   r = [...r].sort((a, b) => {
     const av = a[field] ?? '', bv = b[field] ?? '';
@@ -52,7 +53,7 @@ function CRMApp({ onLogout }) {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
   const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState({ sector: '', status: '', priority: '' });
+  const [filters, setFilters] = useState({ sector: '', status: '', priority: '', listType: '' });
   const [sort, setSort] = useState({ field: 'combinedScore', dir: 'desc' });
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [visibleColumns, setVisibleColumns] = useState(loadVisibleColumns);
@@ -84,7 +85,7 @@ function CRMApp({ onLogout }) {
   }, []);
 
   const handleClearFilters = useCallback(() => {
-    setFilters({ sector: '', status: '', priority: '' }); setPage(1); setSelectedIds(new Set());
+    setFilters({ sector: '', status: '', priority: '', listType: '' }); setPage(1); setSelectedIds(new Set());
   }, []);
 
   const handleSearchChange = useCallback((val) => { setSearch(val); setPage(1); setSelectedIds(new Set()); }, []);
@@ -169,7 +170,7 @@ function CRMApp({ onLogout }) {
 
   const handleExport = useCallback(() => {
     const { contacts: all } = applyFilters(allContacts, { search, filters, sort, page: 1, pageSize: 9999999 });
-    const cols = ['name', 'company', 'sector', 'phone', 'email', 'city', 'profile', 'combinedScore', 'priority', 'status', 'followUpDate', 'notes', 'tags', 'message'];
+    const cols = ['name', 'company', 'listType', 'sector', 'phone', 'email', 'city', 'profile', 'combinedScore', 'priority', 'status', 'followUpDate', 'notes', 'tags', 'message'];
     const esc = v => { const s = v == null ? '' : String(v); return /[,"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
     const lines = [cols.join(','), ...all.map(c => cols.map(col => col === 'tags' ? esc((Array.isArray(c.tags) ? c.tags : []).join('; ')) : esc(c[col])).join(','))];
     const url = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/csv' }));

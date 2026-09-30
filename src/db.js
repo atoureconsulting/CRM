@@ -46,6 +46,7 @@ export function createContact(data) {
     phone: data.phone || '',
     email: data.email || '',
     profile: data.profile || 'organization',
+    listType: data.listType || '',
     city: data.city || '',
     message: data.message || '',
     companyScore: data.companyScore || 0,
@@ -106,12 +107,15 @@ export function getStats(contacts) {
   const byStatus = { New: 0, Contacted: 0, Partner: 0, Archived: 0 };
   const byPriority = { High: 0, Medium: 0 };
   const bySector = {};
+  const byListType = {};
   for (const c of contacts) {
     if (c.status in byStatus) byStatus[c.status]++;
     if (c.priority in byPriority) byPriority[c.priority]++;
     if (c.sector) bySector[c.sector] = (bySector[c.sector] || 0) + 1;
+    const lt = c.listType || 'Unassigned';
+    byListType[lt] = (byListType[lt] || 0) + 1;
   }
-  return { total: contacts.length, byStatus, byPriority, bySector };
+  return { total: contacts.length, byStatus, byPriority, bySector, byListType };
 }
 
 export function importContacts(dataArray) {
@@ -128,6 +132,7 @@ export function importContacts(dataArray) {
       firstName: c.firstName || '', lastName: c.lastName || '',
       company: c.company || '', sector: c.nature || c.sector || '',
       phone: c.phone || '', email: c.email || '', profile: c.profile || '',
+      listType: c.listType || '',
       city: c.city || '', message: c.message || '',
       companyScore: c.companyScore || 0, personScore: c.personScore || 0, combinedScore: c.combinedScore || 0,
       priority: c.priority || 'Medium', status: c.status || 'New',
@@ -156,7 +161,7 @@ export function seedIfEmpty(seedData) {
       name: buildName(c.firstName, c.lastName, c.name),
       firstName: c.firstName || '', lastName: c.lastName || '',
       company: c.company || '', sector: c.nature || c.sector || '',
-      phone: c.phone || '', email: c.email || '', profile: c.profile || 'organization',
+      phone: c.phone || '', email: c.email || '', profile: c.profile || 'organization', listType: c.listType || '',
       city: c.city || '', message: c.message || '',
       companyScore: c.companyScore || 0, personScore: c.personScore || 0, combinedScore: c.combinedScore || 0,
       priority: c.priority || 'Medium', status: c.status || 'New',
@@ -178,7 +183,7 @@ export function seedIfEmpty(seedData) {
       name: buildName(c.firstName, c.lastName, c.name),
       firstName: c.firstName || '', lastName: c.lastName || '',
       company: c.company || '', sector: c.nature || c.sector || '',
-      phone: c.phone || '', email: c.email || '', profile: c.profile || 'organization',
+      phone: c.phone || '', email: c.email || '', profile: c.profile || 'organization', listType: c.listType || '',
       city: c.city || '', message: c.message || '',
       companyScore: c.companyScore || 0, personScore: c.personScore || 0, combinedScore: c.combinedScore || 0,
       priority: c.priority || 'Medium', status: c.status || 'New',

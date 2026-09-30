@@ -16,6 +16,16 @@ function priorityBadgeClass(priority) {
   return priority === 'High' ? 'badge badge-priority-high' : 'badge badge-priority-medium';
 }
 
+function listTypeBadgeClass(listType) {
+  switch (listType) {
+    case 'Client': return 'badge badge-listtype-client';
+    case 'Influencer': return 'badge badge-listtype-influencer';
+    case 'Partner': return 'badge badge-listtype-partner';
+    case 'Vendor': return 'badge badge-listtype-vendor';
+    default: return 'badge badge-listtype-unassigned';
+  }
+}
+
 function formatPhone(phone) {
   return phone ? phone.replace(/\s+/g, ' ') : '—';
 }
@@ -93,6 +103,7 @@ export default function ContactTable({
                 />
               </th>
               <th className="col-name">Name</th>
+              {show('listType') && <th className="col-listtype">List Type</th>}
               {show('sector') && <th className="col-sector">Sector</th>}
               {show('phone') && <th className="col-phone">Phone</th>}
               {show('score') && <th className="col-score">Score</th>}
@@ -105,7 +116,7 @@ export default function ContactTable({
           <tbody>
             {loading && contacts.length === 0 && (
               <tr>
-                <td colSpan={9} className="empty-cell">
+                <td colSpan={2 + visibleColumns.length} className="empty-cell">
                   <div className="loading-dots">
                     <span /><span /><span />
                   </div>
@@ -114,7 +125,7 @@ export default function ContactTable({
             )}
             {!loading && contacts.length === 0 && (
               <tr>
-                <td colSpan={9} className="empty-cell">
+                <td colSpan={2 + visibleColumns.length} className="empty-cell">
                   No contacts found
                 </td>
               </tr>
@@ -148,6 +159,11 @@ export default function ContactTable({
                     </div>
                   </div>
                 </td>
+                {show('listType') && (
+                  <td className="col-listtype">
+                    <span className={listTypeBadgeClass(contact.listType)}>{contact.listType || 'Unassigned'}</span>
+                  </td>
+                )}
                 {show('sector') && (
                   <td className="col-sector">
                     <span className="sector-tag">{contact.sector || '—'}</span>
