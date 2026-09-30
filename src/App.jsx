@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import LoginScreen from './components/LoginScreen.jsx';
 import Header from './components/Header.jsx';
 import Sidebar from './components/Sidebar.jsx';
@@ -8,9 +8,11 @@ import ContactTable from './components/ContactTable.jsx';
 import ContactDrawer from './components/ContactDrawer.jsx';
 import ContactModal from './components/ContactModal.jsx';
 import Toast from './components/Toast.jsx';
+import SheetConnectModal from './components/SheetConnectModal.jsx';
 import {
   getAllContacts, createContact, updateContact, deleteContact,
   bulkUpdateStatus, getContactActivity, addActivityEntry, getStats, importContacts,
+  syncFromSheet, isSheetConnected,
 } from './db.js';
 
 const ALL_COLUMNS = ['name', 'listType', 'sector', 'phone', 'score', 'priority', 'status', 'followUpDate', 'actions'];
@@ -62,6 +64,7 @@ function CRMApp({ onLogout }) {
   const [modalMode, setModalMode] = useState(null);
   const [modalContact, setModalContact] = useState(null);
   const [toasts, setToasts] = useState([]);
+  const [showSheetModal, setShowSheetModal] = useState(false);
 
   function refresh() { setAllContacts(getAllContacts()); }
 
@@ -78,6 +81,13 @@ function CRMApp({ onLogout }) {
   }, []);
 
   const dismissToast = useCallback((id) => setToasts(t => t.filter(x => x.id !== id)), []);
+
+  useEffect(() => {
+    if (!isSheetConnected()) return;
+    syncFromSheet()
+      .then(count => { if (count !== null) { refresh(); showToast(`Synced ${count} contacts from Google Sheet`); } })
+      .catch(e => showToast('Sheet sync failed: ' + e.message, 'error'));
+  }, []);
 
   const handleFilterChange = useCallback((key, value) => {
     setFilters(f => ({ ...f, [key]: f[key] === value ? '' : value }));
@@ -189,7 +199,7 @@ function CRMApp({ onLogout }) {
   return (
     <div className="app-layout">
       <div className="app-header">
-        <Header onAddContact={handleAddContact} onImport={handleImport} onExport={handleExport} onLogout={onLogout} />
+        <Header onAddContact={handleAddContact} onImport={handleImport} onExport={handleExport} onLogout={onLogout} onConnectSheet={() => setShowSheetModal(true)} />
       </div>
       <div className="app-sidebar">
         <Sidebar stats={stats} filters={filters} onFilterChange={handleFilterChange} onClearFilters={handleClearFilters} />
@@ -216,6 +226,12 @@ function CRMApp({ onLogout }) {
         <ContactModal mode={modalMode} contact={modalContact} onClose={handleModalClose} onSave={handleModalSave} showToast={showToast} />
       )}
       <Toast toasts={toasts} onDismiss={dismissToast} />
+      {showSheetModal && (
+        <SheetConnectModal
+          onClose={() => setShowSheetModal(false)}
+          onConnected={(count) => { refresh(); showToast(count !== null ? `Synced ${count} contacts from Google Sheet` : 'Disconnected from Google Sheet'); }}
+        />
+      )}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { pullContactsFromSheet, pushContactToSheet, deleteContactFromSheet, pushAllContactsToSheet, isSheetConnected } from './sheetsSync.js';
+
 const KEYS = {
   CONTACTS: 'atoure_contacts',
   ACTIVITY: 'atoure_activity',
@@ -63,7 +65,13 @@ export function createContact(data) {
   contacts.push(contact);
   saveAllContacts(contacts);
   addActivityEntry(contact.id, 'Contact created', '');
+  pushContactToSheet(contact);
   return contact;
+}
+
+export function findDuplicateByPhone(phone, excludeId) {
+  if (!phone || !phone.trim()) return null;
+  return getAllContacts().find(c => c.phone && c.phone === phone && c.id !== excludeId) || null;
 }
 
 export function updateContact(id, data) {
@@ -83,11 +91,13 @@ export function updateContact(id, data) {
   if (data.followUpDate !== undefined && data.followUpDate !== existing.followUpDate && data.followUpDate) {
     addActivityEntry(id, `Follow-up set to ${data.followUpDate}`, '');
   }
+  pushContactToSheet(updated);
   return updated;
 }
 
 export function deleteContact(id) {
   saveAllContacts(getAllContacts().filter(c => c.id !== id));
+  deleteContactFromSheet(id);
 }
 
 export function bulkUpdateStatus(ids, status) {
@@ -97,7 +107,9 @@ export function bulkUpdateStatus(ids, status) {
   const updated = contacts.map(c => {
     if (!idSet.has(c.id)) return c;
     addActivityEntry(c.id, `Status changed to ${status}`, '');
-    return { ...c, status, updatedAt: now };
+    const next = { ...c, status, updatedAt: now };
+    pushContactToSheet(next);
+    return next;
   });
   saveAllContacts(updated);
   return ids.length;
@@ -147,6 +159,7 @@ export function importContacts(dataArray) {
   }
   write(KEYS.NEXT_ID, id);
   saveAllContacts(existing);
+  if (imported > 0 && isSheetConnected()) pushAllContactsToSheet(existing).catch(e => console.error('Sheet sync (import) failed:', e));
   return { imported, skipped };
 }
 
@@ -199,4 +212,25 @@ export function seedIfEmpty(seedData) {
 
 function buildName(first, last, fallback) {
   return [first, last].filter(Boolean).join(' ') || fallback || '';
+}
+
+export { isSheetConnected, getSheetsUrl, setSheetsUrl } from './sheetsSync.js';
+
+// Pulls contacts from the connected Google Sheet and merges them into local
+// storage (sheet row wins on conflict, since it's the shared source of truth).
+// Returns the merged count, or null if no Sheet is connected.
+export async function syncFromSheet() {
+  const rows = await pullContactsFromSheet();
+  if (rows === null) return null;
+  const local = getAllContacts();
+  const byId = new Map(local.map(c => [c.id, c]));
+  for (const row of rows) {
+    if (!row.id) continue;
+    byId.set(row.id, { ...byId.get(row.id), ...row });
+  }
+  const merged = Array.from(byId.values());
+  saveAllContacts(merged);
+  const maxId = merged.reduce((m, c) => Math.max(m, c.id || 0), read(KEYS.NEXT_ID, 10000));
+  write(KEYS.NEXT_ID, maxId + 1);
+  return merged.length;
 }

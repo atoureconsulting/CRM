@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { findDuplicateByPhone } from '../db.js';
 
 const SECTORS = [
   'Média / Visibilité', 'Production audiovisuelle', 'Accès lieux / expériences',
@@ -39,6 +40,8 @@ export default function ContactModal({ mode, contact, onClose, onSave, showToast
   function handleSave() {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
+    const dup = findDuplicateByPhone(form.phone, mode === 'edit' && contact ? contact.id : undefined);
+    if (dup && !confirm(`"${dup.name}" already has this phone number. Save anyway?`)) return;
     const payload = { ...form, name: [form.firstName, form.lastName].filter(Boolean).join(' '), followUpDate: form.followUpDate || null };
     onSave(payload);
   }
