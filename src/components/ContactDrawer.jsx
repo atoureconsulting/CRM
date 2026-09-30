@@ -105,6 +105,7 @@ export default function ContactDrawer({ contact, activity, onClose, onUpdate, on
               <div className="drawer-badges">
                 <span className={statusBadgeClass(contact.status)}>{contact.status}</span>
                 <span className={priorityBadgeClass(contact.priority)}>{contact.priority}</span>
+                <span className={`badge badge-listtype-${(contact.listType || 'unassigned').toLowerCase()}`}>{contact.listType || 'Unassigned'}</span>
                 {contact.profile && (
                   <span className="badge badge-profile">{contact.profile}</span>
                 )}

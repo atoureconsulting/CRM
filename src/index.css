@@ -135,6 +135,27 @@ textarea {
   color: #C8A951;
 }
 
+.badge-listtype-client {
+  background: rgba(26, 82, 118, 0.18);
+  color: #4A90D9;
+}
+.badge-listtype-influencer {
+  background: rgba(125, 60, 152, 0.18);
+  color: #A569BD;
+}
+.badge-listtype-partner {
+  background: rgba(30, 122, 74, 0.18);
+  color: #2ECC71;
+}
+.badge-listtype-vendor {
+  background: rgba(200, 169, 81, 0.2);
+  color: #C8A951;
+}
+.badge-listtype-unassigned {
+  background: rgba(138, 134, 124, 0.15);
+  color: var(--muted);
+}
+
 /* Inputs */
 .input {
   background: var(--surface2);
