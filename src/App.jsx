@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import LoginScreen from './components/LoginScreen.jsx';
 import Header from './components/Header.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import Toolbar from './components/Toolbar.jsx';
@@ -45,9 +44,8 @@ function applyFilters(all, { search, filters, sort, page, pageSize }) {
 }
 
 export default function App() {
-  const [authenticated, setAuthenticated] = useState(() => localStorage.getItem('atoure_auth') === '1');
-  if (!authenticated) return <LoginScreen onAuthenticated={() => setAuthenticated(true)} />;
-  return <CRMApp onLogout={() => { localStorage.removeItem('atoure_auth'); setAuthenticated(false); }} />;
+  // The password check happens on the server (functions/_middleware.js) before this page loads.
+  return <CRMApp onLogout={() => { window.location.href = '/__logout'; }} />;
 }
 
 function CRMApp({ onLogout }) {
